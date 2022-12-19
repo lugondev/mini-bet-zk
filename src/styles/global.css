@@ -1,0 +1,47 @@
+.card-bid {
+  margin: 0 auto;
+  width: 400px;
+  background: linear-gradient(166.77deg, #3b4155, #3a3045);
+  color: white;
+  padding-top: 40px;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  overflow: hidden;
+}
+
+.form-bid {
+  color: white !important;
+  padding: 30px;
+  background: #27262c;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+}
+
+.ip_amount {
+  background: #372f47;
+  padding: 7px 15px;
+  height: 48px;
+  border: none;
+  color: white;
+}
+
+.ip_amount::placeholder {
+  text-align: right;
+  color: white;
+}
+
+.pb-4 {
+  padding-bottom: 20px;
+}
+
+.text-white {
+  color: #fff;
+}
+
+.btn-bid {
+  height: 48px;
+  padding: 0px 24px;
+  width: 200px;
+  font-weight: bold;
+  text-transform: capitalize;
+}

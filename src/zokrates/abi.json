@@ -1,0 +1,22 @@
+{
+  "inputs": [
+    {
+      "name": "value",
+      "public": false,
+      "type": "field"
+    },
+    {
+      "name": "revealValue",
+      "public": true,
+      "type": "field"
+    },
+    {
+      "name": "hash",
+      "public": true,
+      "type": "field"
+    }
+  ],
+  "output": {
+    "type": "field"
+  }
+}
