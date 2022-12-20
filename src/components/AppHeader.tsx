@@ -7,14 +7,12 @@ const AppHeader = () => {
   return (
     <div
       style={{
-        background:
-          "linear-gradient(0deg,rgba(0,0,0,.5),rgba(0,0,0,.5)),#2a71e7",
         padding: "0 24px",
         color: "#fff",
       }}
     >
       <Row align="middle" justify={"space-between"}>
-        <Col xl={12}>
+        <Col md={24} lg={12}>
           <Row
             align="middle"
             style={{
@@ -29,7 +27,7 @@ const AppHeader = () => {
                 height={120}
               />
             </Col>
-            <Col
+            {/* <Col
               style={{
                 color: "#fff",
               }}
@@ -58,7 +56,7 @@ const AppHeader = () => {
                   </Link>
                 );
               })}
-            </Col>
+            </Col> */}
           </Row>
         </Col>
 

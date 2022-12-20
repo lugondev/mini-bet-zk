@@ -7,30 +7,30 @@ import {
   Modal,
   Row,
   Spin,
+  Tag,
   Typography,
 } from "antd";
 import axios from "axios";
 import { useState } from "react";
-import { toast } from "react-hot-toast";
-import { useAccount, useSigner } from "wagmi";
+import { useAccount } from "wagmi";
 import { useToggle } from "../../hooks/useToggle";
+import { useStorageData } from "../../store/useStorageData";
 import {
   useBidAction,
   useCheckHasBidding,
   usePreCheck,
 } from "../../web3/useBidAction";
-import { useContractZkBid } from "../../web3/useContract";
 import AppButton from "../AppButton";
+import AppListPlayer from "../AppListPlayer";
 import CatLoader from "../CatLoader";
 type LayoutType = Parameters<typeof Form>[0]["layout"];
-
-const { Text, Link } = Typography;
 
 const AppFormBid = () => {
   const [loading, setLoading] = useToggle(false);
   const [open, onToggle] = useToggle(false);
-  const { data } = useSigner();
-  const zkBidInstance = useContractZkBid(data);
+
+  const { dataList } = useStorageData();
+
   const [dataBid, setDataBid] = useState({
     proofBid: "",
     hash: "",
@@ -70,54 +70,40 @@ const AppFormBid = () => {
   };
 
   const [confirmLoading, setConfirmLoading] = useToggle(false);
+  const { loading: isChecking } = usePreCheck();
+  const { biddingOpen, owner, bidHashes } = useStorageData();
+  const { onStartBidding, onBid } = useBidAction();
+  const { hasBidding, loading: checkingBidding } = useCheckHasBidding();
 
   const handleOk = async () => {
-    try {
-      setConfirmLoading();
-      const tx = await zkBidInstance?.bid(dataBid.proofBid, dataBid.hash);
-      toast.promise(tx.wait().finally(onToggle), {
-        loading: "Loading",
-        success: "Got the data",
-        error: "Error when fetching",
-      });
-    } catch (e: any) {
-      toast.error(e?.reason);
-    } finally {
-      setConfirmLoading();
-    }
+    setConfirmLoading();
+    await onBid(dataBid, onToggle);
+    setConfirmLoading();
   };
 
   const handleCancel = () => {
     onToggle();
   };
 
-  const { loading: isChecking, owner, isBidding, setFork } = usePreCheck();
-  const { onStartBidding } = useBidAction();
+  const isLoadingContext = isChecking || checkingBidding;
 
-  const { hasBidding, loading: checkingBidding } = useCheckHasBidding();
-  if (isChecking || checkingBidding)
+  if (isLoadingContext)
     return (
       <Spin tip="Loading" size="large">
         <div className="content" />
       </Spin>
     );
 
-  if (!isBidding) {
+  if (!biddingOpen) {
     if (address == owner) {
       return (
         <div
           style={{
+            width: 100 + "%",
             textAlign: "center",
-            margin: "0 auto",
           }}
         >
-          <AppButton
-            method={() =>
-              onStartBidding().then(() => {
-                setFork(true);
-              })
-            }
-          >
+          <AppButton className="button-53" method={() => onStartBidding()}>
             Start Bid
           </AppButton>
         </div>
@@ -131,6 +117,17 @@ const AppFormBid = () => {
           }}
         >
           <CatLoader />
+          <div
+            style={{
+              marginTop: 20,
+            }}
+          >
+            <Typography.Text>
+              <Tag color="magenta">
+                The bidding has not started yet. Please wait for the owner to
+              </Tag>
+            </Typography.Text>
+          </div>
         </div>
       );
     }
@@ -151,7 +148,7 @@ const AppFormBid = () => {
             onFinishFailed={onFinishFailed}
           >
             <>
-              {hasBidding && (
+              {+bidHashes != 0 && (
                 <div
                   style={{
                     position: "absolute",
@@ -248,6 +245,10 @@ const AppFormBid = () => {
           <p>Proof Bid: {JSON.stringify(dataBid.proofBid)}</p>
           <p>Hash: {dataBid.hash}</p>
         </Modal>
+      </div>
+
+      <div>
+        <AppListPlayer />
       </div>
     </div>
   );

@@ -1,25 +1,13 @@
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import {
-  Button,
-  Col,
-  Empty,
-  Layout,
-  Modal,
-  Row,
-  Skeleton,
-  Table,
-  Tag,
-  theme,
-  Typography,
-} from "antd";
+import { Button, Empty, Modal, Skeleton, Table, Tag, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { useAccount } from "wagmi";
 import AppFormReveal from "../components/Form/AppFormReveal";
 import { useToggle } from "../hooks/useToggle";
+import { useStorageData } from "../store/useStorageData";
 import { useContractZkBid } from "../web3/useContract";
 import { useGetPlayers } from "../web3/useGetListPlayer";
 
-const Dashboard = () => {
+const AppListPlayer = () => {
   /* 
     1. GET totalUsersBidding
     2. GET getUserByIndex -> address user
@@ -27,7 +15,7 @@ const Dashboard = () => {
     4. CHECK user have reveal bidValues[user] -> bidValue ---no-> revealBid(proofBid, bidValue);
   */
 
-  const { isConnected, address } = useAccount();
+  const { isConnected } = useAccount();
 
   if (!isConnected) return <div>please connect wallet</div>;
 
@@ -36,18 +24,18 @@ const Dashboard = () => {
 
 interface DataType {
   key: string;
-  bidValue: string | number;
-  hash: string;
+  address: string | unknown;
+  bidHash: string | number | unknown;
+  bidValue: string | number | unknown;
   tags: string[];
 }
 
 const DashBoardContent = () => {
-  const {
-    token: { colorBgContainer },
-  } = theme.useToken();
   const [open, onToggle] = useToggle(false);
 
-  const { dataList, loading } = useGetPlayers();
+  const { loading } = useGetPlayers();
+  const { dataList } = useStorageData();
+
   const contractInstance = useContractZkBid();
 
   const handleReveal = async (address: string) => {};
@@ -119,6 +107,8 @@ const DashBoardContent = () => {
     },
   ];
 
+  if (!dataList) return null;
+
   return (
     <>
       <Typography>
@@ -145,4 +135,4 @@ const DashBoardContent = () => {
     </>
   );
 };
-export default Dashboard;
+export default AppListPlayer;

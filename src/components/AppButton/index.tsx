@@ -13,7 +13,6 @@ interface IndexProps {
 
 const AppButton = ({ method, children, callback, ...rest }: IndexProps) => {
   const [loading, setLoading] = useToggle(false);
-  const [api] = notification.useNotification();
 
   const handleClick = async () => {
     setLoading();

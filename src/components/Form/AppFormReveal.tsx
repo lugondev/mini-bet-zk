@@ -14,6 +14,7 @@ import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAccount, useSigner } from "wagmi";
 import { useToggle } from "../../hooks/useToggle";
+import { useStorageData } from "../../store/useStorageData";
 import { useBidAction, usePreCheck } from "../../web3/useBidAction";
 import { useContractZkBid } from "../../web3/useContract";
 import AppButton from "../AppButton";
@@ -63,31 +64,24 @@ const AppFormReveal = () => {
   };
   const [confirmLoading, setConfirmLoading] = useToggle(false);
 
+  const { onRevealBid } = useBidAction();
   const handleOk = async () => {
-    try {
-      setConfirmLoading();
-      const tx = await zkBidInstance?.revealBid(
-        dataBid.proofBid,
-        form.getFieldsValue().amount
-      );
-      toast.promise(tx.wait().finally(onToggle), {
-        loading: "Loading",
-        success: "Got the data",
-        error: "Error when fetching",
-      });
-    } catch (e: any) {
-      toast.error(e?.reason);
-    } finally {
-      setConfirmLoading();
-    }
+    const payload = {
+      proofBid: dataBid.proofBid,
+      amount: form.getFieldsValue().amount,
+    };
+    setConfirmLoading();
+    await onRevealBid(payload, onToggle);
+    setConfirmLoading();
   };
 
   const handleCancel = () => {
     onToggle();
   };
 
-  const { loading: isChecking, owner, isBidding, hasBidding } = usePreCheck();
+  const { loading: isChecking } = usePreCheck();
   const { onStartBidding } = useBidAction();
+  const { biddingOpen, owner, bidHashes } = useStorageData();
 
   if (isChecking)
     return (
@@ -95,14 +89,6 @@ const AppFormReveal = () => {
         <div className="content" />
       </Spin>
     );
-
-  if (!isBidding) {
-    if (address == owner) {
-      return <AppButton method={onStartBidding}>Start</AppButton>;
-    } else {
-      return <div>Not bidding</div>;
-    }
-  }
 
   return (
     <div className="m-auto">
@@ -158,12 +144,6 @@ const AppFormReveal = () => {
                 Generator Data
               </Button>
             </Form.Item>
-            {hasBidding && (
-              <span className="text-white">
-                You won’t be able to remove or change your BID once you enter
-                it.
-              </span>
-            )}
           </Form>
         </div>
         <Modal

@@ -1,3 +1,4 @@
+import { useStorageData } from "./../store/useStorageData";
 import { useToggle } from "./../hooks/useToggle";
 import { multicall } from "@wagmi/core";
 
@@ -10,6 +11,7 @@ export const useGetDataPlayer = () => {
   const { data } = useSigner();
   const contractInstance = useContractZkBid(data);
 
+  const { updateDataList } = useStorageData();
   const get = async () => {
     if (!contractInstance) return [];
     const contractInfo = {
@@ -50,10 +52,10 @@ export const useGetDataPlayer = () => {
         address: _dataUserByIndex[i],
         bidHash: _dataUser[0][i],
         bidValue: _dataUser[1][i],
-        // isReveal: _dataUser[1][i],
         tags: [Number(_dataUser[1][i]) > 0 ? "Ready" : "Not Ready"],
       };
     });
+    updateDataList(_data as any);
     return _data;
   };
 
@@ -65,20 +67,15 @@ export const useGetPlayers = () => {
   const contractInstance = useContractZkBid(data);
 
   const [loading, setLoading] = useToggle(false);
-  const [state, setState] = useState<Array<any>>([]);
 
   const get = useGetDataPlayer();
   useEffect(() => {
     if (contractInstance) {
       setLoading();
-      get()
-        .then((data) => {
-          setState(data);
-        })
-        .finally(setLoading);
+      get().finally(setLoading);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { dataList: state, loading };
+  return { loading };
 };

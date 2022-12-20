@@ -1,28 +1,42 @@
 import { useGetDataPlayer } from "./useGetListPlayer";
+import { ContractReceipt } from "ethers";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAccount, useSigner } from "wagmi";
+import { useStorageData } from "../store/useStorageData";
 import { useToggle } from "./../hooks/useToggle";
 import { useContractZkBid } from "./useContract";
 
 export const useBidAction = () => {
   const { data: signerData } = useSigner();
   const zkBidInstance = useContractZkBid(signerData);
+  const { address } = useAccount();
+  const storageData = useStorageData();
+  const getDataList = useGetDataPlayer();
 
   const getOwner = async () => {
-    return await zkBidInstance?.owner();
+    const owner = await zkBidInstance?.owner();
+    storageData.updateOwner(owner);
+    return owner;
   };
 
   const getVerifier = async () => {
-    return await zkBidInstance?.verifier();
+    const verifier = await zkBidInstance?.verifier();
+    storageData.updateVerifier(verifier);
+    return verifier;
   };
 
   const hasBidding = async (address: string) => {
-    return (await zkBidInstance?.bidHashes(address)) as boolean;
+    const biddingHash = await zkBidInstance?.bidHashes(address);
+    console.log(biddingHash, "biddingHash");
+    storageData.updateBidHashes(+biddingHash);
+    return biddingHash;
   };
 
   const checkBiddingOpen = async () => {
-    return await zkBidInstance?.biddingOpen();
+    const biddingOpen = await zkBidInstance?.biddingOpen();
+    storageData.updateStatusBidding(biddingOpen);
+    return biddingOpen;
   };
 
   const checkBiddingEnd = async () => {
@@ -42,8 +56,16 @@ export const useBidAction = () => {
         success: "Got the data",
         error: "Error when fetching",
       });
-      return tx;
-    } catch (e) {}
+
+      return tx.wait().then((receipt: ContractReceipt) => {
+        if (receipt) {
+          checkBiddingOpen();
+          getDataList();
+        }
+      });
+    } catch (e: any) {
+      toast.error(e?.reason || e?.message || e?.data?.message || e?.data);
+    }
   };
 
   const onEndBidding = async () => {
@@ -51,7 +73,72 @@ export const useBidAction = () => {
     await tx.wait();
   };
 
+  const onBid = async (
+    dataBid: {
+      proofBid: string;
+      hash: string;
+    },
+    callback?: () => void
+  ) => {
+    try {
+      const tx = await zkBidInstance?.bid(dataBid.proofBid, dataBid.hash);
+      toast.promise(
+        tx
+          .wait()
+          .then((receipt: ContractReceipt) => {
+            if (receipt && address) {
+              hasBidding(address);
+              getDataList();
+            }
+          })
+          .finally(() => callback && callback()),
+        {
+          loading: "Loading",
+          success: "Got the data",
+          error: "Error when fetching",
+        }
+      );
+    } catch (e: any) {
+      toast.error(e?.reason || e?.message || e?.data?.message || e?.data);
+    }
+  };
+
+  const onRevealBid = async (
+    dataBid: {
+      proofBid: string;
+      amount: number;
+    },
+    callback?: () => void
+  ) => {
+    try {
+      const tx = await zkBidInstance?.revealBid(
+        dataBid.proofBid,
+        dataBid.amount
+      );
+      toast.promise(
+        tx
+          .wait()
+          .then((receipt: ContractReceipt) => {
+            if (receipt && address) {
+              hasBidding(address);
+              getDataList();
+            }
+          })
+          .finally(() => callback && callback()),
+        {
+          loading: "Loading",
+          success: "Got the data",
+          error: "Error when fetching",
+        }
+      );
+    } catch (e: any) {
+      toast.error(e?.reason || e?.message || e?.data?.message || e?.data);
+    }
+  };
+
   return {
+    onBid,
+    onRevealBid,
     getOwner,
     getVerifier,
     hasBidding,
@@ -63,40 +150,20 @@ export const useBidAction = () => {
 };
 
 export const usePreCheck = () => {
-  const [fork, setFork] = useState(false);
   const { getOwner, getVerifier, checkBiddingOpen, hasBidding } =
     useBidAction();
-
   const [loading, setLoading] = useToggle(false);
-
-  const [state, setState] = useState<{
-    owner?: string;
-    verifier?: string;
-    isBidding?: boolean;
-    hasBidding?: boolean;
-  }>();
-
   useEffect(() => {
     setLoading();
     Promise.all([getOwner(), getVerifier(), checkBiddingOpen()]).then(
       (data) => {
-        const [owner, verifier, biddingOpen] = data;
-        setState({
-          owner,
-          verifier,
-          isBidding: biddingOpen,
-          hasBidding: false,
-        });
         setLoading();
       }
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fork]);
+  }, []);
+
   return {
     loading,
-    ...state,
-    setState,
-    setFork,
   };
 };
 
