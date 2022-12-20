@@ -1,14 +1,13 @@
-import { useToggle } from "./../hooks/useToggle";
-import { notification } from "antd";
+import { useGetDataPlayer } from "./useGetListPlayer";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { useSigner } from "wagmi";
+import { useAccount, useSigner } from "wagmi";
+import { useToggle } from "./../hooks/useToggle";
 import { useContractZkBid } from "./useContract";
 
 export const useBidAction = () => {
   const { data: signerData } = useSigner();
   const zkBidInstance = useContractZkBid(signerData);
-  const [api, contextHolder] = notification.useNotification();
 
   const getOwner = async () => {
     return await zkBidInstance?.owner();
@@ -16,6 +15,10 @@ export const useBidAction = () => {
 
   const getVerifier = async () => {
     return await zkBidInstance?.verifier();
+  };
+
+  const hasBidding = async (address: string) => {
+    return (await zkBidInstance?.bidHashes(address)) as boolean;
   };
 
   const checkBiddingOpen = async () => {
@@ -39,6 +42,7 @@ export const useBidAction = () => {
         success: "Got the data",
         error: "Error when fetching",
       });
+      return tx;
     } catch (e) {}
   };
 
@@ -50,6 +54,7 @@ export const useBidAction = () => {
   return {
     getOwner,
     getVerifier,
+    hasBidding,
     checkBiddingOpen,
     checkBiddingEnd,
     onStartBidding,
@@ -58,20 +63,17 @@ export const useBidAction = () => {
 };
 
 export const usePreCheck = () => {
-  const {
-    getOwner,
-    getVerifier,
-    checkBiddingOpen,
-    checkBiddingEnd,
-    onEndBidding,
-    onStartBidding,
-  } = useBidAction();
+  const [fork, setFork] = useState(false);
+  const { getOwner, getVerifier, checkBiddingOpen, hasBidding } =
+    useBidAction();
 
   const [loading, setLoading] = useToggle(false);
+
   const [state, setState] = useState<{
-    owner: string;
-    verifier: string;
-    isBidding: boolean;
+    owner?: string;
+    verifier?: string;
+    isBidding?: boolean;
+    hasBidding?: boolean;
   }>();
 
   useEffect(() => {
@@ -83,15 +85,42 @@ export const usePreCheck = () => {
           owner,
           verifier,
           isBidding: biddingOpen,
+          hasBidding: false,
         });
         setLoading();
       }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  }, [fork]);
   return {
     loading,
     ...state,
+    setState,
+    setFork,
+  };
+};
+
+export const useCheckHasBidding = () => {
+  const { hasBidding: onCheckBidding } = useBidAction();
+
+  const [loading, setLoading] = useToggle(false);
+  const { isConnected, address } = useAccount();
+  const [hasBidding, setHasBidding] = useState(false);
+
+  useEffect(() => {
+    if (isConnected && address) {
+      setLoading();
+      Promise.all([onCheckBidding(address)]).then((data) => {
+        const [hasBidding] = data;
+        setHasBidding(+hasBidding > 0);
+        setLoading();
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
+
+  return {
+    hasBidding,
+    loading,
   };
 };

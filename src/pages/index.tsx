@@ -1,18 +1,24 @@
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { DatePicker } from "antd";
+import { Layout } from "antd";
 import { useAccount } from "wagmi";
+import AppFormBid from "../components/Form/AppFormBid";
 
-import { Account } from "../components";
+const { Header, Content, Footer, Sider } = Layout;
+const App = () => {
+  const { address } = useAccount();
 
-function Page() {
-  const { isConnected } = useAccount();
+  if (!address) return null;
+
   return (
     <>
-      <h1>wagmi + RainbowKit + Next.js</h1>
-      <ConnectButton />
-      {isConnected && <Account />}
+      <div
+        style={{
+          paddingTop: 100,
+        }}
+      >
+        <AppFormBid />
+      </div>
     </>
   );
-}
+};
 
-export default Page;
+export default App;

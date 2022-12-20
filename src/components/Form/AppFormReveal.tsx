@@ -14,19 +14,12 @@ import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAccount, useSigner } from "wagmi";
 import { useToggle } from "../../hooks/useToggle";
-import {
-  useBidAction,
-  useCheckHasBidding,
-  usePreCheck,
-} from "../../web3/useBidAction";
+import { useBidAction, usePreCheck } from "../../web3/useBidAction";
 import { useContractZkBid } from "../../web3/useContract";
 import AppButton from "../AppButton";
-import CatLoader from "../CatLoader";
 type LayoutType = Parameters<typeof Form>[0]["layout"];
 
-const { Text, Link } = Typography;
-
-const AppFormBid = () => {
+const AppFormReveal = () => {
   const [loading, setLoading] = useToggle(false);
   const [open, onToggle] = useToggle(false);
   const { data } = useSigner();
@@ -48,7 +41,7 @@ const AppFormBid = () => {
     try {
       const payload = {
         bidValue: +values.amount,
-        isReveal: false,
+        isReveal: true,
       };
       const data = await axios.post("/api/keys", payload);
       if (data) {
@@ -58,8 +51,8 @@ const AppFormBid = () => {
         });
         onToggle();
       }
-    } catch (e) {
-      console.log({ e });
+    } catch (e: any) {
+      toast.error(e?.reason);
     } finally {
       setLoading();
     }
@@ -68,13 +61,15 @@ const AppFormBid = () => {
   const onFinishFailed = (errorInfo: any) => {
     console.log("Failed:", errorInfo);
   };
-
   const [confirmLoading, setConfirmLoading] = useToggle(false);
 
   const handleOk = async () => {
     try {
       setConfirmLoading();
-      const tx = await zkBidInstance?.bid(dataBid.proofBid, dataBid.hash);
+      const tx = await zkBidInstance?.revealBid(
+        dataBid.proofBid,
+        form.getFieldsValue().amount
+      );
       toast.promise(tx.wait().finally(onToggle), {
         loading: "Loading",
         success: "Got the data",
@@ -91,11 +86,10 @@ const AppFormBid = () => {
     onToggle();
   };
 
-  const { loading: isChecking, owner, isBidding, setFork } = usePreCheck();
+  const { loading: isChecking, owner, isBidding, hasBidding } = usePreCheck();
   const { onStartBidding } = useBidAction();
 
-  const { hasBidding, loading: checkingBidding } = useCheckHasBidding();
-  if (isChecking || checkingBidding)
+  if (isChecking)
     return (
       <Spin tip="Loading" size="large">
         <div className="content" />
@@ -104,45 +98,18 @@ const AppFormBid = () => {
 
   if (!isBidding) {
     if (address == owner) {
-      return (
-        <div
-          style={{
-            textAlign: "center",
-            margin: "0 auto",
-          }}
-        >
-          <AppButton
-            method={() =>
-              onStartBidding().then(() => {
-                setFork(true);
-              })
-            }
-          >
-            Start Bid
-          </AppButton>
-        </div>
-      );
+      return <AppButton method={onStartBidding}>Start</AppButton>;
     } else {
-      return (
-        <div
-          style={{
-            textAlign: "center",
-            margin: "0 auto",
-          }}
-        >
-          <CatLoader />
-        </div>
-      );
+      return <div>Not bidding</div>;
     }
   }
 
   return (
-    <div className="m-auto slide-top">
+    <div className="m-auto">
       <div className="card-bid">
-        <div className="pb-4">BID</div>
-        <div className="form-bid ">
+        <div className="pb-4">Reveal</div>
+        <div className="form-bid">
           <Form
-            disabled={hasBidding}
             layout={formLayout}
             form={form}
             initialValues={{ layout: formLayout }}
@@ -150,39 +117,6 @@ const AppFormBid = () => {
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
           >
-            <>
-              {hasBidding && (
-                <div
-                  style={{
-                    position: "absolute",
-                    background:
-                      "linear-gradient(0deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), rgb(42, 113, 231)",
-                    color: "#fff",
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    zIndex: 1,
-                    textAlign: "center",
-                    margin: 0 + " auto",
-                    height: 100 + "%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      paddingRight: 10,
-                    }}
-                  >
-                    <CatLoader />
-                  </div>
-                  <p>You have already bid for this gem</p>
-                </div>
-              )}
-            </>
-
             <Row
               className="text-white"
               justify={"space-between"}
@@ -211,7 +145,7 @@ const AppFormBid = () => {
               <Input
                 disabled={loading}
                 className="ip_amount"
-                placeholder="0.0"
+                placeholder="124"
               />
             </Form.Item>
             <Form.Item>
@@ -224,14 +158,15 @@ const AppFormBid = () => {
                 Generator Data
               </Button>
             </Form.Item>
-            <span className="text-white">
-              You won’t be able to remove or change your BID once you enter it.
-            </span>
+            {hasBidding && (
+              <span className="text-white">
+                You won’t be able to remove or change your BID once you enter
+                it.
+              </span>
+            )}
           </Form>
         </div>
         <Modal
-          className="modalStyle"
-          title=""
           open={open}
           onOk={handleOk}
           onCancel={handleCancel}
@@ -253,4 +188,4 @@ const AppFormBid = () => {
   );
 };
 
-export default AppFormBid;
+export default AppFormReveal;
