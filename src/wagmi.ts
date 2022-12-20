@@ -71,13 +71,14 @@ const { chains, provider, webSocketProvider } = configureChains(
   [
     mainnet,
     // @ts-ignore
-    ...(process.env.NODE_ENV === "development" ? [bscTestnet] : []),
+    ...[bscTestnet],
+    // ...(process.env.NODE_ENV === "development" ? [bscTestnet] : []),
   ],
   [publicProvider()]
 );
 
 const { connectors } = getDefaultWallets({
-  appName: "My wagmi + RainbowKit App",
+  appName: "Mini game",
   chains,
 });
 
