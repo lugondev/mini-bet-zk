@@ -14,9 +14,11 @@ const AppListPlayer = () => {
   */
 
   const { isConnected } = useAccount();
+  const { biddingOpen, biddingEnd } = useStorageData();
 
   if (!isConnected) return <div>please connect wallet</div>;
 
+  if (!biddingOpen && !biddingEnd) return null;
   return <DashBoardContent />;
 };
 

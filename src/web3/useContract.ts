@@ -12,17 +12,17 @@ export const useContractZkBid = (_provider?: any) => {
 
   let address;
 
-  if (router.pathname == "/test") {
-    address =
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      "contract" in router.query &&
-      ethers.utils.isAddress(router.query.contract as string)
-        ? (router.query.contract as string)
-        : ZK_BID;
-  }
+  // if (router.pathname == "/test") {
+  //   address =
+  //     // eslint-disable-next-line react-hooks/exhaustive-deps
+  //     "contract" in router.query &&
+  //     ethers.utils.isAddress(router.query.contract as string)
+  //       ? (router.query.contract as string)
+  //       : ZK_BID;
+  // }
 
   const contractInstance = useContract({
-    address,
+    address: ZK_BID,
     abi: ZKAbi,
     signerOrProvider: _provider || data || provider,
   });
