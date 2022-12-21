@@ -1,6 +1,6 @@
 import { getDefaultWallets } from "@rainbow-me/rainbowkit";
 import { configureChains, createClient } from "wagmi";
-import { goerli, mainnet, bscTestnet } from "wagmi/chains";
+import { goerli, fantomTestnet, polygonMumbai, bscTestnet } from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
 
 const getTestNetChain = () => {
@@ -69,15 +69,15 @@ const getTestNetChain = () => {
 
 const { chains, provider, webSocketProvider } = configureChains(
   [
-    mainnet,
     // @ts-ignore
-    ...(process.env.NODE_ENV === "development" ? [bscTestnet] : []),
+    ...[bscTestnet, fantomTestnet, polygonMumbai],
+    // ...(process.env.NODE_ENV === "development" ? [bscTestnet] : []),
   ],
   [publicProvider()]
 );
 
 const { connectors } = getDefaultWallets({
-  appName: "My wagmi + RainbowKit App",
+  appName: "Mini game",
   chains,
 });
 

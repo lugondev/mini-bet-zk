@@ -1,21 +1,21 @@
-import "@rainbow-me/rainbowkit/styles.css";
-import Script from 'next/script'
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import "@rainbow-me/rainbowkit/styles.css";
 import type { AppProps } from "next/app";
 import NextHead from "next/head";
 import * as React from "react";
-import { WagmiConfig } from "wagmi";
 import { Toaster } from "react-hot-toast";
+import { WagmiConfig } from "wagmi";
+
 import { chains, client } from "../wagmi";
-import favicon from "../public/static/favicon.ico";
+
+import AppHeader from "../components/AppHeader";
+import "../styles/cat.scss";
 import "../styles/global.css";
-import { useEffect } from "react"
 
 function App({ Component, pageProps }: AppProps) {
-    const [ mounted, setMounted ] = React.useState(false);
+    const [mounted, setMounted] = React.useState(false);
     React.useEffect(() => setMounted(true), []);
-
-    useEffect(() => {
+    React.useEffect(() => {
         // @ts-ignore
         const go = new window["Go"]();
         window.WebAssembly.instantiateStreaming(fetch("/static/json.wasm",{
@@ -31,13 +31,15 @@ function App({ Component, pageProps }: AppProps) {
         <WagmiConfig client={client}>
             <RainbowKitProvider chains={chains}>
                 <NextHead>
-                    <link rel="shortcut icon" href={favicon.src} type="image/x-icon" />
-                    {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-                    <script src={"/static/wasm_exec.js"} type="text/javascript"/>
                     <title>My wagmi + RainbowKit App</title>
                 </NextHead>
-                {mounted && <Component {...pageProps} />}
-                <Toaster/>
+                {mounted && (
+                    <>
+                        <AppHeader />
+                        <Component {...pageProps} />
+                    </>
+                )}
+                <Toaster />
             </RainbowKitProvider>
         </WagmiConfig>
     );
