@@ -1,36 +1,27 @@
-import {
-  Button,
-  Col,
-  Form,
-  Image,
-  Input,
-  Modal,
-  Row,
-  Spin,
-  Typography,
-} from "antd";
+import { Button, Col, Form, Image, Input, Modal, Row, Typography } from "antd";
 import axios from "axios";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
-import { useAccount, useSigner } from "wagmi";
+import { useAccount } from "wagmi";
+
 import { useToggle } from "../../hooks/useToggle";
 import { useStorageData } from "../../store/useStorageData";
 import { useBidAction, usePreCheck } from "../../web3/useBidAction";
-import { useContractZkBid } from "../../web3/useContract";
 import AppButton from "../AppButton";
+import CatLoader from "../CatLoader";
 type LayoutType = Parameters<typeof Form>[0]["layout"];
 
 const AppFormReveal = () => {
   const [loading, setLoading] = useToggle(false);
   const [open, onToggle] = useToggle(false);
-  const { data } = useSigner();
-  const zkBidInstance = useContractZkBid(data);
   const [dataBid, setDataBid] = useState({
     proofBid: "",
     hash: "",
   });
   const [form] = Form.useForm();
   const [formLayout, setFormLayout] = useState<LayoutType>("horizontal");
+
+  const { storageLoading, dataList, biddingEnd, owner } = useStorageData();
   const { address } = useAccount();
 
   const onFormLayoutChange = ({ layout }: { layout: LayoutType }) => {
@@ -62,9 +53,10 @@ const AppFormReveal = () => {
   const onFinishFailed = (errorInfo: any) => {
     console.log("Failed:", errorInfo);
   };
+
   const [confirmLoading, setConfirmLoading] = useToggle(false);
 
-  const { onRevealBid } = useBidAction();
+  const { onRevealBid, onEndBidding } = useBidAction();
   const handleOk = async () => {
     const payload = {
       proofBid: dataBid.proofBid,
@@ -80,22 +72,55 @@ const AppFormReveal = () => {
   };
 
   const { loading: isChecking } = usePreCheck();
-  const { onStartBidding } = useBidAction();
-  const { biddingOpen, owner, bidHashes } = useStorageData();
 
-  if (isChecking)
+  const myBidValue = useMemo(() => {
+    const myBid = dataList?.find((item: any) => item.address == address);
+    return myBid?.bidValue;
+  }, [address, dataList]);
+
+  if (isChecking || storageLoading) return <CatLoader />;
+
+  if (!biddingEnd)
     return (
-      <Spin tip="Loading" size="large">
-        <div className="content" />
-      </Spin>
+      <div>
+        <CatLoader />
+        <Typography.Title color="secondary" className="text-center" level={3}>
+          Bidding is not end yet ! After bidding end, you can reveal your bid
+        </Typography.Title>
+
+        {address == owner && (
+          <div
+            style={{
+              width: 100 + "%",
+              textAlign: "center",
+            }}
+          >
+            <AppButton className="button-53" method={() => onEndBidding()}>
+              End Bid
+            </AppButton>
+          </div>
+        )}
+      </div>
+    );
+
+  if (Number(myBidValue) > 0)
+    return (
+      <div className="font-game text-center">
+        <Typography.Title color="secondary" className="text-center" level={3}>
+          You have already reveal your bid Your Bid:{" "}
+          {Number(myBidValue).toLocaleString()}
+          ETH
+        </Typography.Title>
+      </div>
     );
 
   return (
     <div className="m-auto">
       <div className="card-bid">
-        <div className="pb-4">Reveal</div>
+        <div className="pb-4 font-game">REVEAL</div>
         <div className="form-bid">
           <Form
+            disabled={!biddingEnd}
             layout={formLayout}
             form={form}
             initialValues={{ layout: formLayout }}
@@ -141,7 +166,7 @@ const AppFormReveal = () => {
                 className="btn-bid"
                 htmlType="submit"
               >
-                Generator Data
+                {loading ? "Comparing" : "Generator Data"}
               </Button>
             </Form.Item>
           </Form>

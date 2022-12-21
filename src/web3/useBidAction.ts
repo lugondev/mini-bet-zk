@@ -1,4 +1,3 @@
-import { useGetDataPlayer } from "./useGetListPlayer";
 import { ContractReceipt } from "ethers";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -6,6 +5,7 @@ import { useAccount, useSigner } from "wagmi";
 import { useStorageData } from "../store/useStorageData";
 import { useToggle } from "./../hooks/useToggle";
 import { useContractZkBid } from "./useContract";
+import { useGetDataPlayer } from "./useGetListPlayer";
 
 export const useBidAction = () => {
   const { data: signerData } = useSigner();
@@ -40,12 +40,9 @@ export const useBidAction = () => {
   };
 
   const checkBiddingEnd = async () => {
-    const tx = await zkBidInstance?.biddingEnd();
-    toast.promise(tx.wait(), {
-      loading: "Loading",
-      success: "Got the data",
-      error: "Error when fetching",
-    });
+    const biddingEnd = await zkBidInstance?.biddingEnd();
+    storageData.updateBiddingEnd(biddingEnd);
+    return biddingEnd;
   };
 
   const onStartBidding = async () => {
@@ -69,8 +66,23 @@ export const useBidAction = () => {
   };
 
   const onEndBidding = async () => {
-    const tx = await zkBidInstance?.endBidding();
-    await tx.wait();
+    try {
+      const tx = await zkBidInstance?.endBidding();
+      toast.promise(tx.wait(), {
+        loading: "Loading",
+        success: "Got the data",
+        error: "Error when fetching",
+      });
+
+      return tx.wait().then((receipt: ContractReceipt) => {
+        if (receipt) {
+          checkBiddingOpen();
+          getDataList();
+        }
+      });
+    } catch (e: any) {
+      toast.error(e?.reason || e?.message || e?.data?.message || e?.data);
+    }
   };
 
   const onBid = async (
@@ -150,16 +162,19 @@ export const useBidAction = () => {
 };
 
 export const usePreCheck = () => {
-  const { getOwner, getVerifier, checkBiddingOpen, hasBidding } =
+  const { getOwner, getVerifier, checkBiddingOpen, checkBiddingEnd } =
     useBidAction();
   const [loading, setLoading] = useToggle(false);
   useEffect(() => {
     setLoading();
-    Promise.all([getOwner(), getVerifier(), checkBiddingOpen()]).then(
-      (data) => {
-        setLoading();
-      }
-    );
+    Promise.all([
+      getOwner(),
+      getVerifier(),
+      checkBiddingOpen(),
+      checkBiddingEnd(),
+    ]).then(() => {
+      setLoading();
+    });
   }, []);
 
   return {

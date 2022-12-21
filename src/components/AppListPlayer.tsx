@@ -1,10 +1,8 @@
-import { Button, Empty, Modal, Skeleton, Table, Tag, Typography } from "antd";
+import { Col, Empty, Row, Skeleton, Table, Tag, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { useAccount } from "wagmi";
-import AppFormReveal from "../components/Form/AppFormReveal";
 import { useToggle } from "../hooks/useToggle";
 import { useStorageData } from "../store/useStorageData";
-import { useContractZkBid } from "../web3/useContract";
 import { useGetPlayers } from "../web3/useGetListPlayer";
 
 const AppListPlayer = () => {
@@ -34,11 +32,7 @@ const DashBoardContent = () => {
   const [open, onToggle] = useToggle(false);
 
   const { loading } = useGetPlayers();
-  const { dataList } = useStorageData();
-
-  const contractInstance = useContractZkBid();
-
-  const handleReveal = async (address: string) => {};
+  const { dataList, totalRevealed } = useStorageData();
 
   const handleCancel = () => {
     onToggle();
@@ -62,10 +56,10 @@ const DashBoardContent = () => {
     },
 
     {
-      title: "Bid Hash",
-      dataIndex: "bidHash",
+      title: "Auctioneer",
+      dataIndex: "address",
       key: "bid hash",
-      render: (value) => <small>{JSON.stringify(value)}</small>,
+      render: (address) => <small>{address}</small>,
     },
     {
       title: "Tags",
@@ -91,16 +85,12 @@ const DashBoardContent = () => {
       title: "Bid Value",
       dataIndex: "bidValue",
       key: "bid value",
+      sorter: (a: any, b: any) =>
+        !!+a.bidValue ? +a.bidValue - +b.bidValue : 0,
       render: (value) => {
         return (
           <small>
-            {!!+value ? (
-              +value
-            ) : (
-              <Button type="primary" onClick={onToggle}>
-                Reveal
-              </Button>
-            )}
+            {!!+value ? +value : <Tag color="processing">Waiting reveal</Tag>}
           </small>
         );
       },
@@ -111,9 +101,29 @@ const DashBoardContent = () => {
 
   return (
     <>
-      <Typography>
-        <Typography.Title>Players</Typography.Title>
-      </Typography>
+      <Row justify={"space-between"}>
+        <Col md={12}>
+          <Typography>
+            <Typography.Title className="font-game">
+              Total Auctioneer: {+dataList?.length}
+            </Typography.Title>
+          </Typography>
+        </Col>
+
+        <Col
+          md={12}
+          style={{
+            textAlign: "right",
+          }}
+        >
+          <Typography>
+            <Typography.Title className="font-game">
+              Revealed: {totalRevealed} / {+dataList?.length}
+            </Typography.Title>
+          </Typography>
+        </Col>
+      </Row>
+
       <Table
         columns={columns}
         dataSource={dataList.length > 0 ? dataList : []}
@@ -121,17 +131,6 @@ const DashBoardContent = () => {
           emptyText: loading ? <Skeleton active={true} /> : <Empty />,
         }}
       />
-
-      <Modal
-        className="modalStyle"
-        title=""
-        open={open}
-        onOk={handleOk}
-        onCancel={handleCancel}
-        footer={null}
-      >
-        <AppFormReveal />
-      </Modal>
     </>
   );
 };

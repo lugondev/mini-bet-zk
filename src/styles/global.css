@@ -1,5 +1,16 @@
+@font-face {
+  font-family: "Rocher";
+  src: url(https://assets.codepen.io/9632/RocherColorGX.woff2);
+}
 body {
   background: #1b4996;
+}
+
+.font-game {
+  font-family: "Rocher" !important;
+}
+.text-center {
+  text-align: center;
 }
 
 .card-bid {
